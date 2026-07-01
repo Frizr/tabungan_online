@@ -1,0 +1,11 @@
+name: tabungan_online
+
+packages:
+  - shared_models
+  - backend
+  - frontend
+
+scripts:
+  bootstrap:
+    run: melos exec -- dart pub get
+    description: Install semua dependensi

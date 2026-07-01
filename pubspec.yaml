@@ -1,0 +1,9 @@
+name: tabungan_online
+description: Monorepo workspace for Tabungan Online Ringan
+version: 0.0.1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dev_dependencies:
+  melos: ^7.5.1

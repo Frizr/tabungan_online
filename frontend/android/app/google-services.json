@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "57219912522",
+    "project_id": "tabungan-online-app",
+    "storage_bucket": "tabungan-online-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:57219912522:android:ef719a73cda814c54627b3",
+        "android_client_info": {
+          "package_name": "com.tabungan.online"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcmpNz_bhBr57AF1iTNJp1W_Nx5ukZyc4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
