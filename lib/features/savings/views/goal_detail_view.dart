@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -7,23 +8,12 @@ import '../models/savings_goal.dart';
 import '../controllers/savings_controller.dart';
 import 'widgets/add_transaction_sheet.dart';
 import 'widgets/edit_transaction_sheet.dart';
+import 'widgets/looping_background.dart';
 
 class GoalDetailView extends ConsumerWidget {
   final SavingsGoal goal;
 
   const GoalDetailView({super.key, required this.goal});
-
-  void _showAddTransactionSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => AddTransactionSheet(goal: goal),
-    );
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,104 +25,155 @@ class GoalDetailView extends ConsumerWidget {
     final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(currentGoal.title),
+        title: Text(currentGoal.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.primary),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Header section (Progress Ring & Info)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-            decoration: const BoxDecoration(
-              color: AppColors.background,
-              border: Border(bottom: BorderSide(color: AppColors.surfaceHighlight, width: 1)),
-            ),
-            child: Column(
-              children: [
-                SizedBox(
-                  width: 160,
-                  height: 160,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      CircularProgressIndicator(
-                        value: currentGoal.progress,
-                        strokeWidth: 12,
-                        backgroundColor: AppColors.surface,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          currentGoal.progress >= 1.0 ? AppColors.success : AppColors.primary,
-                        ),
-                      ),
-                      Center(
-                        child: Text(
-                          '${(currentGoal.progress * 100).clamp(0, 100).toStringAsFixed(0)}%',
-                          style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                color: AppColors.primaryVariant,
-                              ),
-                        ),
+          const LoopingBackground(),
+          Column(
+            children: [
+              // Header section (Glassmorphism & Glowing Ring)
+              SafeArea(
+                bottom: false,
+                child: Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(32),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.05),
+                        blurRadius: 30,
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  currencyFormatter.format(currentGoal.currentAmount),
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontSize: 32,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Target: ${currencyFormatter.format(currentGoal.targetAmount)}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16),
-                ),
-                if (currentGoal.targetDate != null) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceHighlight.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.event, color: AppColors.primary, size: 16),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Hari H: ${DateFormat('dd MMM yyyy', 'id_ID').format(currentGoal.targetDate!)}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Builder(builder: (context) {
-                          final daysLeft = currentGoal.targetDate!.difference(DateTime.now()).inDays;
-                          final text = daysLeft > 0 ? '($daysLeft hari lagi)' : (daysLeft == 0 ? '(Hari ini!)' : '(Terlewat ${daysLeft.abs()} hari)');
-                          final color = daysLeft > 0 ? AppColors.success : (daysLeft == 0 ? Colors.orangeAccent : AppColors.error);
-                          return Text(
-                            text,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: color,
-                              fontWeight: FontWeight.bold,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(32),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              width: 180,
+                              height: 180,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  // Glowing background for the ring
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: (currentGoal.progress >= 1.0 ? AppColors.success : AppColors.primary).withValues(alpha: 0.2),
+                                          blurRadius: 40,
+                                          spreadRadius: 10,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  CircularProgressIndicator(
+                                    value: currentGoal.progress,
+                                    strokeWidth: 14,
+                                    backgroundColor: AppColors.background.withValues(alpha: 0.5),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      currentGoal.progress >= 1.0 ? AppColors.success : AppColors.primary,
+                                    ),
+                                    strokeCap: StrokeCap.round,
+                                  ),
+                                  Center(
+                                    child: Text(
+                                      '${(currentGoal.progress * 100).clamp(0, 100).toStringAsFixed(0)}%',
+                                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                            color: AppColors.primaryVariant,
+                                            fontWeight: FontWeight.bold,
+                                            shadows: [
+                                              Shadow(
+                                                color: AppColors.primary.withValues(alpha: 0.5),
+                                                blurRadius: 10,
+                                              )
+                                            ],
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          );
-                        }),
-                      ],
+                            const SizedBox(height: 24),
+                            Text(
+                              currencyFormatter.format(currentGoal.currentAmount),
+                              style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Target: ${currencyFormatter.format(currentGoal.targetAmount)}',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16, color: AppColors.textSecondary),
+                            ),
+                            if (currentGoal.targetDate != null) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.event, color: AppColors.primary, size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Hari H: ${DateFormat('dd MMM yyyy', 'id_ID').format(currentGoal.targetDate!)}',
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: AppColors.textPrimary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Builder(builder: (context) {
+                                      final daysLeft = currentGoal.targetDate!.difference(DateTime.now()).inDays;
+                                      final text = daysLeft > 0 ? '($daysLeft hari lagi)' : (daysLeft == 0 ? '(Hari ini!)' : '(Terlewat ${daysLeft.abs()} hari)');
+                                      final color = daysLeft > 0 ? AppColors.success : (daysLeft == 0 ? Colors.orangeAccent : AppColors.error);
+                                      return Text(
+                                        text,
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          color: color,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ],
-              ],
-            ),
-          ),
-          
-          // Transactions List section
-          Expanded(
-            child: Container(
-              color: AppColors.surface,
+                ),
+              ),
+              
+              // Transactions List section
+              Expanded(
+                child: Container(
+                  color: Colors.transparent,
               child: transactionsAsync.when(
                 data: (transactions) {
                   if (transactions.isEmpty) {
@@ -153,58 +194,66 @@ class GoalDetailView extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final tx = transactions[index];
                       final isDeposit = tx.amount >= 0;
-                      return Card(
-                        margin: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        elevation: 0,
-                        color: AppColors.background,
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: AppColors.background,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                              ),
-                              builder: (context) => EditTransactionSheet(transaction: tx),
-                            );
-                          },
-                          leading: Container(
-                            padding: const EdgeInsets.all(12),
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            margin: EdgeInsets.zero,
                             decoration: BoxDecoration(
-                              color: (isDeposit ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
+                              color: AppColors.surface.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
                             ),
-                            child: Icon(
-                              isDeposit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                              color: isDeposit ? AppColors.success : AppColors.error,
-                            ),
-                          ),
-                          title: Text(
-                            isDeposit ? 'Setor Tabungan' : 'Tarik Saldo',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (tx.note.isNotEmpty) ...[
-                                const SizedBox(height: 4),
-                                Text(tx.note, style: Theme.of(context).textTheme.bodyMedium),
-                              ],
-                              const SizedBox(height: 4),
-                              Text(
-                                DateFormat('dd MMM yyyy, HH:mm').format(tx.date),
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
-                              ),
-                            ],
-                          ),
-                          trailing: Text(
-                            '${isDeposit ? '+' : ''}${currencyFormatter.format(tx.amount)}',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: AppColors.background,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                  ),
+                                  builder: (context) => EditTransactionSheet(transaction: tx),
+                                );
+                              },
+                              leading: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: (isDeposit ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  isDeposit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
                                   color: isDeposit ? AppColors.success : AppColors.error,
                                 ),
+                              ),
+                              title: Text(
+                                isDeposit ? 'Setor Tabungan' : 'Tarik Saldo',
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (tx.note.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(tx.note, style: Theme.of(context).textTheme.bodyMedium),
+                                  ],
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    DateFormat('dd MMM yyyy, HH:mm').format(tx.date),
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                              trailing: Text(
+                                '${isDeposit ? '+' : ''}${currencyFormatter.format(tx.amount)}',
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      color: isDeposit ? AppColors.success : AppColors.error,
+                                    ),
+                              ),
+                            ),
                           ),
                         ),
                       );
@@ -215,6 +264,8 @@ class GoalDetailView extends ConsumerWidget {
                 error: (e, _) => Center(child: Text('Error: $e')),
               ),
             ),
+          ),
+            ],
           ),
         ],
       ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/settings_controller.dart';
-import '../../auth/controllers/auth_controller.dart';
+import '../../auth/repositories/auth_repository.dart';
 import '../../../core/constants/app_colors.dart';
 
 class SettingsView extends ConsumerWidget {
@@ -54,7 +54,8 @@ class SettingsView extends ConsumerWidget {
                             }
                           }
                         : null,
-                    activeColor: AppColors.primary,
+                    activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                    activeThumbColor: AppColors.primary,
                   ),
                 ),
                 const Divider(color: AppColors.background, height: 1),
@@ -77,7 +78,7 @@ class SettingsView extends ConsumerWidget {
                             onPressed: () {
                               Navigator.pop(context); // Close dialog
                               Navigator.pop(context); // Close settings
-                              ref.read(authControllerProvider.notifier).signOut();
+                              ref.read(authRepositoryProvider).signOut();
                             },
                             child: const Text('Keluar', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
                           ),

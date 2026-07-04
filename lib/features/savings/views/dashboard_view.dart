@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_tilt/flutter_tilt.dart';
+
 import 'package:intl/intl.dart';
 import 'package:animations/animations.dart';
 
@@ -11,6 +11,8 @@ import 'package:tabungan_frontend/features/settings/views/settings_view.dart';
 import '../models/savings_goal.dart';
 import 'goal_detail_view.dart';
 import 'widgets/edit_goal_sheet.dart';
+import 'widgets/looping_background.dart';
+import 'package:flutter_tilt/flutter_tilt.dart';
 
 class DashboardView extends ConsumerWidget {
   const DashboardView({super.key});
@@ -20,7 +22,10 @@ class DashboardView extends ConsumerWidget {
     final savingsAsync = ref.watch(savingsGoalsProvider);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text('TabunganKu'),
         actions: [
           OpenContainer(
@@ -38,9 +43,12 @@ class DashboardView extends ConsumerWidget {
           ),
         ],
       ),
-      body: SafeArea(
-        child: savingsAsync.when(
-          data: (goals) {
+      body: Stack(
+        children: [
+          const Positioned.fill(child: LoopingBackground()),
+          SafeArea(
+            child: savingsAsync.when(
+              data: (goals) {
             final totalSavings = goals.fold<double>(0, (sum, item) => sum + item.currentAmount);
             
             return Padding(
@@ -48,18 +56,80 @@ class DashboardView extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Total Saldo',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: AppColors.textSecondary,
+                  Tilt(
+                    tiltConfig: const TiltConfig(
+                      angle: 15,
+                      enableRevert: true,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(32.0),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.white.withValues(alpha: 0.15),
+                                Colors.white.withValues(alpha: 0.05),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Total Saldo Anda',
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                          color: AppColors.textSecondary.withValues(alpha: 0.9),
+                                          letterSpacing: 0.5,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(totalSavings),
+                                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w800,
+                                        shadows: [
+                                          Shadow(
+                                            color: AppColors.primary.withValues(alpha: 0.4),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(totalSavings),
-                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                          color: AppColors.primary,
-                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 32),
                   Expanded(
@@ -91,6 +161,8 @@ class DashboardView extends ConsumerWidget {
           error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.error))),
         ),
       ),
+        ],
+      ),
     );
   }
 
@@ -100,17 +172,13 @@ class DashboardView extends ConsumerWidget {
       closedColor: Colors.transparent,
       closedElevation: 0,
       openElevation: 0,
-      openColor: AppColors.surface,
-      transitionType: ContainerTransitionType.fadeThrough,
-      transitionDuration: const Duration(milliseconds: 500),
+      openColor: AppColors.background, // Match with GoalDetailView background
+      transitionType: ContainerTransitionType.fade, // Softer fade transition
+      transitionDuration: const Duration(milliseconds: 750), // Slower, more elegant duration
+      useRootNavigator: true,
       openBuilder: (context, _) => GoalDetailView(goal: goal),
       closedBuilder: (context, openContainer) => GestureDetector(
         onTap: openContainer,
-      child: Tilt(
-        tiltConfig: const TiltConfig(
-          angle: 15,
-          leaveDuration: Duration(milliseconds: 500),
-        ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(

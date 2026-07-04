@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:tabungan_frontend/core/constants/app_colors.dart';
 import 'package:tabungan_frontend/features/savings/controllers/savings_controller.dart';
+import 'package:tabungan_frontend/features/savings/views/widgets/looping_background.dart';
+import 'dart:ui';
 
 class ReportView extends ConsumerWidget {
   const ReportView({super.key});
@@ -15,241 +16,226 @@ class ReportView extends ConsumerWidget {
     final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Laporan Global'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: SafeArea(
-        child: savingsAsync.when(
-          data: (goals) {
-            if (goals.isEmpty) {
-              return Center(
-                child: Text(
-                  'Belum ada data untuk dianalisis.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                ),
-              );
-            }
+      body: Stack(
+        children: [
+          // Background Effect
+          const LoopingBackground(),
+          SafeArea(
+            child: savingsAsync.when(
+              data: (goals) {
+                if (goals.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'Belum ada data untuk dianalisis.',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                    ),
+                  );
+                }
 
-            final totalTarget = goals.fold<double>(0, (sum, item) => sum + item.targetAmount);
-            final totalSavings = goals.fold<double>(0, (sum, item) => sum + item.currentAmount);
-            final overallProgress = totalTarget > 0 ? (totalSavings / totalTarget).clamp(0.0, 1.0) : 0.0;
+                final totalTarget = goals.fold<double>(0, (sum, item) => sum + item.targetAmount);
+                final totalSavings = goals.fold<double>(0, (sum, item) => sum + item.currentAmount);
+                final overallProgress = totalTarget > 0 ? (totalSavings / totalTarget).clamp(0.0, 1.0) : 0.0;
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Global Overview Card
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.surfaceHighlight, width: 1),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Total Terkumpul',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.textSecondary),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          currencyFormatter.format(totalSavings),
-                          style: Theme.of(context).textTheme.displayLarge?.copyWith(color: AppColors.primary),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Dari Total Target: ${currencyFormatter.format(totalTarget)}',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 24),
-                        LinearProgressIndicator(
-                          value: overallProgress,
-                          backgroundColor: AppColors.background,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            overallProgress >= 1.0 ? AppColors.success : AppColors.primary,
-                          ),
-                          minHeight: 12,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          '${(overallProgress * 100).toStringAsFixed(1)}% Tercapai',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primaryVariant),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  
-                  // Interactive Chart
-                  Text(
-                    'Grafik Tabungan',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    height: 250,
-                    padding: const EdgeInsets.only(top: 24, right: 24, bottom: 16, left: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.surfaceHighlight, width: 1),
-                    ),
-                    child: BarChart(
-                      BarChartData(
-                        alignment: BarChartAlignment.spaceAround,
-                        maxY: goals.isEmpty ? 100 : goals.map((g) => g.targetAmount).reduce((a, b) => a > b ? a : b) * 1.2,
-                        barTouchData: BarTouchData(
-                          enabled: true,
-                          touchTooltipData: BarTouchTooltipData(
-                            getTooltipColor: (group) => AppColors.primary,
-                            getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                              return BarTooltipItem(
-                                '${goals[groupIndex].title}\n${currencyFormatter.format(rod.toY)}',
-                                const TextStyle(color: AppColors.background, fontWeight: FontWeight.bold),
-                              );
-                            },
-                          ),
-                        ),
-                        titlesData: FlTitlesData(
-                          show: true,
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, meta) {
-                                if (value.toInt() >= 0 && value.toInt() < goals.length) {
-                                  final title = goals[value.toInt()].title;
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: Text(
-                                      title.length > 5 ? '${title.substring(0, 5)}...' : title,
-                                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
-                                    ),
-                                  );
-                                }
-                                return const Text('');
-                              },
-                              reservedSize: 28,
-                            ),
-                          ),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        ),
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: false,
-                          horizontalInterval: goals.isEmpty ? 100 : (goals.map((g) => g.targetAmount).reduce((a, b) => a > b ? a : b) / 4),
-                          getDrawingHorizontalLine: (value) => FlLine(
-                            color: AppColors.surfaceHighlight,
-                            strokeWidth: 1,
-                            dashArray: [5, 5],
-                          ),
-                        ),
-                        borderData: FlBorderData(show: false),
-                        barGroups: goals.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final goal = entry.value;
-                          return BarChartGroupData(
-                            x: index,
-                            barRods: [
-                              BarChartRodData(
-                                toY: goal.targetAmount,
-                                color: AppColors.surfaceHighlight,
-                                width: 16,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              BarChartRodData(
-                                toY: goal.currentAmount,
-                                color: goal.progress >= 1.0 ? AppColors.success : AppColors.primary,
-                                width: 16,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ],
-                            showingTooltipIndicators: [],
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  
-                  // Breakdown per Goal
-                  Text(
-                    'Rincian Tabungan',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  ...goals.map((goal) {
-                    final isComplete = goal.progress >= 1.0;
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      color: AppColors.surface,
-                      elevation: 0,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    goal.title,
-                                    style: Theme.of(context).textTheme.titleMedium,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                if (isComplete)
-                                  const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  currencyFormatter.format(goal.currentAmount),
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        color: isComplete ? AppColors.success : AppColors.primary,
-                                      ),
-                                ),
-                                Text(
-                                  '${(goal.progress * 100).toStringAsFixed(0)}%',
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            LinearProgressIndicator(
-                              value: goal.progress,
-                              backgroundColor: AppColors.background,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                isComplete ? AppColors.success : AppColors.primary,
-                              ),
-                              minHeight: 4,
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Global Overview Card (Glassmorphism)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.surface.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(32),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.05),
+                              blurRadius: 30,
+                              offset: const Offset(0, 15),
                             ),
                           ],
                         ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                            child: Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'Total Terkumpul',
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.textSecondary),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    currencyFormatter.format(totalSavings),
+                                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.bold,
+                                      shadows: [
+                                        Shadow(
+                                          color: AppColors.primary.withValues(alpha: 0.5),
+                                          blurRadius: 15,
+                                        )
+                                      ],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Dari Total Target: ${currencyFormatter.format(totalTarget)}',
+                                    style: Theme.of(context).textTheme.bodyMedium,
+                                  ),
+                                  const SizedBox(height: 32),
+                                  
+                                  // Donut Chart instead of linear progress
+                                  SizedBox(
+                                    height: 200,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        PieChart(
+                                          PieChartData(
+                                            sectionsSpace: 4,
+                                            centerSpaceRadius: 70,
+                                            startDegreeOffset: -90,
+                                            sections: [
+                                              PieChartSectionData(
+                                                color: AppColors.primary,
+                                                value: overallProgress * 100,
+                                                title: '',
+                                                radius: 12,
+                                              ),
+                                              PieChartSectionData(
+                                                color: AppColors.surfaceHighlight.withValues(alpha: 0.5),
+                                                value: (1 - overallProgress) * 100,
+                                                title: '',
+                                                radius: 12,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              '${(overallProgress * 100).toStringAsFixed(1)}%',
+                                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                                color: AppColors.primaryVariant,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text('Tercapai', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                                          ],
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    );
-                  }),
-                ],
-              ),
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-          error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.error))),
-        ),
+                      const SizedBox(height: 32),
+                      
+                      Text(
+                        'Rincian Tabungan',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Breakdown per Goal (Glassmorphism)
+                      ...goals.map((goal) {
+                        final isComplete = goal.progress >= 1.0;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 1),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                              child: Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            goal.title,
+                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (isComplete)
+                                          const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 24),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          currencyFormatter.format(goal.currentAmount),
+                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                                color: isComplete ? AppColors.success : AppColors.primary,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                        ),
+                                        Text(
+                                          '${(goal.progress * 100).toStringAsFixed(0)}%',
+                                          style: TextStyle(
+                                            color: isComplete ? AppColors.success : AppColors.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: LinearProgressIndicator(
+                                        value: goal.progress,
+                                        backgroundColor: AppColors.background.withValues(alpha: 0.5),
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          isComplete ? AppColors.success : AppColors.primary,
+                                        ),
+                                        minHeight: 6,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+              error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.error))),
+            ),
+          ),
+        ],
       ),
     );
   }

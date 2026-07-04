@@ -6,6 +6,7 @@ import 'package:tabungan_frontend/features/savings/views/report_view.dart';
 import 'package:tabungan_frontend/features/simulator/views/simulator_view.dart';
 import 'package:tabungan_frontend/features/savings/views/widgets/add_goal_sheet.dart';
 import 'package:animations/animations.dart';
+import 'dart:ui';
 
 class MainScaffold extends ConsumerStatefulWidget {
   const MainScaffold({super.key});
@@ -76,23 +77,36 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
           ),
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        height: 75.0,
-        padding: EdgeInsets.zero,
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
-        color: AppColors.surface.withValues(alpha: 0.95),
-        elevation: 0,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(icon: Icons.home_rounded, label: 'Beranda', index: 0),
-              _buildNavItem(icon: Icons.calculate_rounded, label: 'Simulasi', index: 1),
-              _buildNavItem(icon: Icons.bar_chart_rounded, label: 'Laporan', index: 2),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          height: 70.0,
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(35),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
             ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(35),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildNavItem(icon: Icons.home_rounded, label: 'Beranda', index: 0),
+                  _buildNavItem(icon: Icons.calculate_rounded, label: 'Simulasi', index: 1),
+                  _buildNavItem(icon: Icons.bar_chart_rounded, label: 'Laporan', index: 2),
+                ],
+              ),
+            ),
           ),
         ),
       ),
