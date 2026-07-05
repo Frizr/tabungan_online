@@ -60,7 +60,7 @@ class _SimulatorViewState extends State<SimulatorView> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Simulasi Nabung'),
+        title: const Text('MyKalkulator'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),

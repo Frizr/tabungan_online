@@ -77,10 +77,10 @@ class _LoginViewState extends ConsumerState<LoginView> with SingleTickerProvider
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Image.asset('assets/images/logo.png', width: 100, height: 100),
+                  Image.asset('assets/images/logo.jpg', width: 100, height: 100),
                   const SizedBox(height: 24),
                   Text(
-                    'TabunganKu',
+                    'MyTabungan',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       color: AppColors.primaryVariant,

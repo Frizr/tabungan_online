@@ -18,7 +18,7 @@ class ReportView extends ConsumerWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Laporan Global'),
+        title: const Text('MyLaporan'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),

@@ -41,60 +41,62 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true, // Allows body to go under the transparent navigation bar
-      body: PageView(
+      body: PageView.builder(
         controller: _pageController,
-        physics: const BouncingScrollPhysics(), // Smooth bounce effect
+        physics: const BouncingScrollPhysics(),
         onPageChanged: (index) {
           setState(() => _currentIndex = index);
         },
-        children: _pages,
+        itemCount: _pages.length,
+        itemBuilder: (context, index) {
+          return AnimatedBuilder(
+            animation: _pageController,
+            builder: (context, child) {
+              double value = 1.0;
+              if (_pageController.position.haveDimensions) {
+                value = _pageController.page! - index;
+                value = (1 - (value.abs() * 0.2)).clamp(0.0, 1.0);
+              } else {
+                value = _currentIndex == index ? 1.0 : 0.8;
+              }
+              return Transform.scale(
+                scale: Curves.easeOut.transform(value),
+                child: Opacity(
+                  opacity: value.clamp(0.0, 1.0),
+                  child: child,
+                ),
+              );
+            },
+            child: _pages[index],
+          );
+        },
       ),
-      floatingActionButton: OpenContainer(
-        closedShape: const CircleBorder(),
-        closedColor: AppColors.primary,
-        closedElevation: 0,
-        openElevation: 0,
-        openColor: AppColors.surface,
-        transitionType: ContainerTransitionType.fadeThrough,
-        transitionDuration: const Duration(milliseconds: 400),
-        openBuilder: (context, _) => Scaffold(
-          backgroundColor: AppColors.surface,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.close_rounded, color: AppColors.textPrimary),
-              onPressed: () => Navigator.of(context).pop(),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.4),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
-          ),
-          body: const SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.only(top: 8.0),
-                child: AddGoalSheet(),
-              ),
-            ),
-          ),
+          ],
         ),
-        closedBuilder: (context, openContainer) => Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.primary,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.4),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
+        child: FloatingActionButton(
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: AppColors.surface,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-            ],
-          ),
-          child: InkWell(
-            onTap: openContainer,
-            customBorder: const CircleBorder(),
-            child: const Icon(Icons.add_rounded, color: AppColors.background, size: 32),
-          ),
+              builder: (context) => const AddGoalSheet(),
+            );
+          },
+          backgroundColor: AppColors.primary,
+          elevation: 0,
+          child: const Icon(Icons.add_rounded, color: AppColors.background, size: 32),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

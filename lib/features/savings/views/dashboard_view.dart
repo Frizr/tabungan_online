@@ -26,20 +26,23 @@ class DashboardView extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('TabunganKu'),
+        title: const Text('MyTabungan'),
         actions: [
-          OpenContainer(
-            closedShape: const CircleBorder(),
-            closedColor: Colors.transparent,
-            closedElevation: 0,
-            openElevation: 0,
-            transitionType: ContainerTransitionType.fadeThrough,
-            transitionDuration: const Duration(milliseconds: 400),
-            openBuilder: (context, _) => const SettingsView(),
-            closedBuilder: (context, openContainer) => IconButton(
-              icon: const Icon(Icons.settings_rounded, color: AppColors.textPrimary),
-              onPressed: openContainer,
-            ),
+          IconButton(
+            icon: const Icon(Icons.settings_rounded, color: AppColors.textPrimary),
+            onPressed: () {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => const SettingsView(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    var tween = Tween(begin: const Offset(1.0, 0.0), end: Offset.zero).chain(CurveTween(curve: Curves.easeOutCubic));
+                    return SlideTransition(position: animation.drive(tween), child: child);
+                  },
+                  transitionDuration: const Duration(milliseconds: 300),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -167,19 +170,21 @@ class DashboardView extends ConsumerWidget {
   }
 
   Widget _buildTiltCard(BuildContext context, SavingsGoal goal) {
-    return OpenContainer(
-      closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      closedColor: Colors.transparent,
-      closedElevation: 0,
-      openElevation: 0,
-      openColor: AppColors.background, // Match with GoalDetailView background
-      transitionType: ContainerTransitionType.fade, // Softer fade transition
-      transitionDuration: const Duration(milliseconds: 750), // Slower, more elegant duration
-      useRootNavigator: true,
-      openBuilder: (context, _) => GoalDetailView(goal: goal),
-      closedBuilder: (context, openContainer) => GestureDetector(
-        onTap: openContainer,
-        child: ClipRRect(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => GoalDetailView(goal: goal),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              var tween = Tween(begin: const Offset(1.0, 0.0), end: Offset.zero).chain(CurveTween(curve: Curves.easeOutCubic));
+              return SlideTransition(position: animation.drive(tween), child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 350),
+          ),
+        );
+      },
+      child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
@@ -301,8 +306,7 @@ class DashboardView extends ConsumerWidget {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }
 
