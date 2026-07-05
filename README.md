@@ -10,8 +10,7 @@ Aplikasi pencatat tabungan dengan desain Glassmorphism yang modern, responsif, d
 * **Navigasi Cepat (Swipe-able)**: Transisi _swipe_ animasi 3D yang sangat *smooth* antar halaman.
 * **Database Lokal Otomatis**: Data Anda tersimpan dengan aman langsung di HP Anda.
 
-## 📸 Tampilan Layar (Screenshots)
-
+## 📸 Tampilan Layar 
 Berikut ini adalah tampilan antarmuka dari aplikasi MyTabungan:
 
 <div style="display:flex; justify-content: space-around;">
