@@ -5,7 +5,6 @@ import 'package:tabungan_frontend/features/savings/views/dashboard_view.dart';
 import 'package:tabungan_frontend/features/savings/views/report_view.dart';
 import 'package:tabungan_frontend/features/simulator/views/simulator_view.dart';
 import 'package:tabungan_frontend/features/savings/views/widgets/add_goal_sheet.dart';
-import 'package:animations/animations.dart';
 import 'dart:ui';
 
 class MainScaffold extends ConsumerStatefulWidget {
@@ -137,7 +136,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
 
   Widget _buildNavItem({required IconData icon, required String label, required int index}) {
     final isSelected = _currentIndex == index;
-    return InkWell(
+    return GestureDetector(
       onTap: () {
         _pageController.animateToPage(
           index,
@@ -145,25 +144,56 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
           curve: Curves.easeOutCubic,
         );
       },
-      borderRadius: BorderRadius.circular(16),
+      behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              size: 24,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              padding: EdgeInsets.all(isSelected ? 6 : 0),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary.withValues(alpha: 0.12) : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: AnimatedScale(
+                scale: isSelected ? 1.15 : 1.0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                child: Icon(
+                  icon,
+                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                  size: 24,
+                ),
+              ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
+            const SizedBox(height: 2),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: isSelected ? 11 : 10,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                letterSpacing: isSelected ? 0.5 : 0,
+              ),
+              child: Text(label),
+            ),
+            const SizedBox(height: 3),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              width: isSelected ? 20 : 0,
+              height: 3,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(2),
+                boxShadow: isSelected
+                    ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.6), blurRadius: 6)]
+                    : [],
               ),
             ),
           ],

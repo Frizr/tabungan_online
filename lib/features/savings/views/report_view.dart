@@ -123,19 +123,28 @@ class ReportView extends ConsumerWidget {
                                               ),
                                             ],
                                           ),
+                                          duration: const Duration(milliseconds: 600),
+                                          curve: Curves.easeOutCubic,
                                         ),
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              '${(overallProgress * 100).toStringAsFixed(1)}%',
-                                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                                color: AppColors.primaryVariant,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            Text('Tercapai', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                                          ],
+                                        TweenAnimationBuilder<double>(
+                                          tween: Tween<double>(begin: 0, end: overallProgress * 100),
+                                          duration: const Duration(milliseconds: 800),
+                                          curve: Curves.easeOutCubic,
+                                          builder: (context, value, child) {
+                                            return Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  '${value.toStringAsFixed(1)}%',
+                                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                                    color: AppColors.primaryVariant,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Text('Tercapai', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                                              ],
+                                            );
+                                          },
                                         )
                                       ],
                                     ),
@@ -154,73 +163,96 @@ class ReportView extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       
-                      // Breakdown per Goal (Glassmorphism)
-                      ...goals.map((goal) {
+                      // Breakdown per Goal (Glassmorphism) with staggered entrance
+                      ...goals.asMap().entries.map((entry) {
+                        final i = entry.key;
+                        final goal = entry.value;
                         final isComplete = goal.progress >= 1.0;
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 1),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                              child: Padding(
-                                padding: const EdgeInsets.all(20.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            goal.title,
-                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                        return TweenAnimationBuilder<double>(
+                          tween: Tween<double>(begin: 0, end: 1),
+                          duration: Duration(milliseconds: 400 + (i * 120)),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return Opacity(
+                              opacity: value,
+                              child: Transform.translate(
+                                offset: Offset(0, 24 * (1 - value)),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 1),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              goal.title,
+                                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
-                                        ),
-                                        if (isComplete)
-                                          const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 24),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          currencyFormatter.format(goal.currentAmount),
-                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                color: isComplete ? AppColors.success : AppColors.primary,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                        ),
-                                        Text(
-                                          '${(goal.progress * 100).toStringAsFixed(0)}%',
-                                          style: TextStyle(
-                                            color: isComplete ? AppColors.success : AppColors.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: LinearProgressIndicator(
-                                        value: goal.progress,
-                                        backgroundColor: AppColors.background.withValues(alpha: 0.5),
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          isComplete ? AppColors.success : AppColors.primary,
-                                        ),
-                                        minHeight: 6,
+                                          if (isComplete)
+                                            const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 24),
+                                        ],
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            currencyFormatter.format(goal.currentAmount),
+                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                                  color: isComplete ? AppColors.success : AppColors.primary,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                          ),
+                                          Text(
+                                            '${(goal.progress * 100).toStringAsFixed(0)}%',
+                                            style: TextStyle(
+                                              color: isComplete ? AppColors.success : AppColors.primary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      TweenAnimationBuilder<double>(
+                                        tween: Tween<double>(begin: 0, end: goal.progress),
+                                        duration: Duration(milliseconds: 600 + (i * 120)),
+                                        curve: Curves.easeOutCubic,
+                                        builder: (context, animatedProgress, _) {
+                                          return ClipRRect(
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: LinearProgressIndicator(
+                                              value: animatedProgress,
+                                              backgroundColor: AppColors.background.withValues(alpha: 0.5),
+                                              valueColor: AlwaysStoppedAnimation<Color>(
+                                                isComplete ? AppColors.success : AppColors.primary,
+                                              ),
+                                              minHeight: 6,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),

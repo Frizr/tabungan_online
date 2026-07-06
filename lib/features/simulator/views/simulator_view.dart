@@ -12,6 +12,8 @@ class SimulatorView extends StatefulWidget {
 }
 
 class _SimulatorViewState extends State<SimulatorView> {
+  // Key to force TweenAnimationBuilder restart on recalculation
+  int _calcKey = 0;
   final _amountController = TextEditingController();
   
   double _durationMonths = 12.0;
@@ -44,6 +46,7 @@ class _SimulatorViewState extends State<SimulatorView> {
       _daily = amount / totalDays;
       _weekly = amount / totalWeeks;
       _monthly = amount / months;
+      _calcKey++;
     });
   }
 
@@ -162,27 +165,38 @@ class _SimulatorViewState extends State<SimulatorView> {
                   const SizedBox(height: 32),
                   
                   if (_monthly != null) ...[
-                    Text(
-                      'Rekomendasi Nabung',
-                      style: Theme.of(context).textTheme.titleLarge,
+                    AnimatedOpacity(
+                      opacity: _monthly != null ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeOutCubic,
+                      child: Text(
+                        'Rekomendasi Nabung',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     _buildResultCard(
                       title: 'Bulanan',
-                      amount: formatter.format(_monthly),
+                      rawAmount: _monthly!,
+                      formatter: formatter,
                       icon: Icons.calendar_month_rounded,
+                      index: 0,
                     ),
                     const SizedBox(height: 16),
                     _buildResultCard(
                       title: 'Mingguan',
-                      amount: formatter.format(_weekly),
+                      rawAmount: _weekly!,
+                      formatter: formatter,
                       icon: Icons.date_range_rounded,
+                      index: 1,
                     ),
                     const SizedBox(height: 16),
                     _buildResultCard(
                       title: 'Harian',
-                      amount: formatter.format(_daily),
+                      rawAmount: _daily!,
+                      formatter: formatter,
                       icon: Icons.today_rounded,
+                      index: 2,
                     ),
                   ],
                 ],
@@ -194,52 +208,81 @@ class _SimulatorViewState extends State<SimulatorView> {
     );
   }
 
-  Widget _buildResultCard({required String title, required String amount, required IconData icon}) {
-    return Tilt(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surface.withValues(alpha: 0.8),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.2),
-                    AppColors.primaryVariant.withValues(alpha: 0.1),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1),
-              ),
-              child: Icon(icon, color: AppColors.primary, size: 28),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
-                  const SizedBox(height: 4),
-                  Text(
-                    amount,
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+  Widget _buildResultCard({
+    required String title,
+    required double rawAmount,
+    required NumberFormat formatter,
+    required IconData icon,
+    required int index,
+  }) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey('result_${index}_$_calcKey'),
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: Duration(milliseconds: 400 + (index * 120)),
+      curve: Curves.easeOutCubic,
+      builder: (context, anim, child) {
+        return Opacity(
+          opacity: anim,
+          child: Transform.translate(
+            offset: Offset(0, 24 * (1 - anim)),
+            child: child,
+          ),
+        );
+      },
+      child: Tilt(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withValues(alpha: 0.2),
+                      AppColors.primaryVariant.withValues(alpha: 0.1),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 28),
               ),
-            ),
-          ],
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                    const SizedBox(height: 4),
+                    TweenAnimationBuilder<double>(
+                      key: ValueKey('amount_${index}_$_calcKey'),
+                      tween: Tween<double>(begin: 0, end: rawAmount),
+                      duration: const Duration(milliseconds: 700),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, _) {
+                        return Text(
+                          formatter.format(value),
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

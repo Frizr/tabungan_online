@@ -83,28 +83,42 @@ class GoalDetailView extends ConsumerWidget {
                                       ],
                                     ),
                                   ),
-                                  CircularProgressIndicator(
-                                    value: currentGoal.progress,
-                                    strokeWidth: 14,
-                                    backgroundColor: AppColors.background.withValues(alpha: 0.5),
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      currentGoal.progress >= 1.0 ? AppColors.success : AppColors.primary,
-                                    ),
-                                    strokeCap: StrokeCap.round,
+                                  TweenAnimationBuilder<double>(
+                                    tween: Tween<double>(begin: 0, end: currentGoal.progress),
+                                    duration: const Duration(milliseconds: 600),
+                                    curve: Curves.easeOutCubic,
+                                    builder: (context, animatedProgress, _) {
+                                      return CircularProgressIndicator(
+                                        value: animatedProgress,
+                                        strokeWidth: 14,
+                                        backgroundColor: AppColors.background.withValues(alpha: 0.5),
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          currentGoal.progress >= 1.0 ? AppColors.success : AppColors.primary,
+                                        ),
+                                        strokeCap: StrokeCap.round,
+                                      );
+                                    },
                                   ),
                                   Center(
-                                    child: Text(
-                                      '${(currentGoal.progress * 100).clamp(0, 100).toStringAsFixed(0)}%',
-                                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                            color: AppColors.primaryVariant,
-                                            fontWeight: FontWeight.bold,
-                                            shadows: [
-                                              Shadow(
-                                                color: AppColors.primary.withValues(alpha: 0.5),
-                                                blurRadius: 10,
-                                              )
-                                            ],
-                                          ),
+                                    child: TweenAnimationBuilder<double>(
+                                      tween: Tween<double>(begin: 0, end: (currentGoal.progress * 100).clamp(0, 100)),
+                                      duration: const Duration(milliseconds: 700),
+                                      curve: Curves.easeOutCubic,
+                                      builder: (context, value, _) {
+                                        return Text(
+                                          '${value.toStringAsFixed(0)}%',
+                                          style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                                color: AppColors.primaryVariant,
+                                                fontWeight: FontWeight.bold,
+                                                shadows: [
+                                                  Shadow(
+                                                    color: AppColors.primary.withValues(alpha: 0.5),
+                                                    blurRadius: 10,
+                                                  )
+                                                ],
+                                              ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ],
@@ -194,64 +208,78 @@ class GoalDetailView extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final tx = transactions[index];
                       final isDeposit = tx.amount >= 0;
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            margin: EdgeInsets.zero,
-                            decoration: BoxDecoration(
-                              color: AppColors.surface.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+                      return TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0, end: 1),
+                        duration: Duration(milliseconds: 400 + (index.clamp(0, 10) * 80)),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, anim, child) {
+                          return Opacity(
+                            opacity: anim,
+                            child: Transform.translate(
+                              offset: Offset(0, 20 * (1 - anim)),
+                              child: child,
                             ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              onTap: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: AppColors.background,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                                  ),
-                                  builder: (context) => EditTransactionSheet(transaction: tx),
-                                );
-                              },
-                              leading: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: (isDeposit ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  isDeposit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                                  color: isDeposit ? AppColors.success : AppColors.error,
-                                ),
+                          );
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Container(
+                              margin: EdgeInsets.zero,
+                              decoration: BoxDecoration(
+                                color: AppColors.surface.withValues(alpha: 0.4),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
                               ),
-                              title: Text(
-                                isDeposit ? 'Setor Tabungan' : 'Tarik Saldo',
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (tx.note.isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Text(tx.note, style: Theme.of(context).textTheme.bodyMedium),
-                                  ],
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    DateFormat('dd MMM yyyy, HH:mm').format(tx.date),
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
-                                  ),
-                                ],
-                              ),
-                              trailing: Text(
-                                '${isDeposit ? '+' : ''}${currencyFormatter.format(tx.amount)}',
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      color: isDeposit ? AppColors.success : AppColors.error,
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                onTap: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: AppColors.background,
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                                     ),
+                                    builder: (context) => EditTransactionSheet(transaction: tx),
+                                  );
+                                },
+                                leading: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: (isDeposit ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    isDeposit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                                    color: isDeposit ? AppColors.success : AppColors.error,
+                                  ),
+                                ),
+                                title: Text(
+                                  isDeposit ? 'Setor Tabungan' : 'Tarik Saldo',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (tx.note.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(tx.note, style: Theme.of(context).textTheme.bodyMedium),
+                                    ],
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      DateFormat('dd MMM yyyy, HH:mm').format(tx.date),
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                                trailing: Text(
+                                  '${isDeposit ? '+' : ''}${currencyFormatter.format(tx.amount)}',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                        color: isDeposit ? AppColors.success : AppColors.error,
+                                      ),
+                                ),
                               ),
                             ),
                           ),

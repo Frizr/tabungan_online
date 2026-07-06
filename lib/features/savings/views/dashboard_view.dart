@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:intl/intl.dart';
-import 'package:animations/animations.dart';
-
 import 'package:tabungan_frontend/core/constants/app_colors.dart';
 import 'package:tabungan_frontend/features/savings/controllers/savings_controller.dart';
 import 'package:tabungan_frontend/features/settings/views/settings_view.dart';
@@ -14,11 +12,17 @@ import 'widgets/edit_goal_sheet.dart';
 import 'widgets/looping_background.dart';
 import 'package:flutter_tilt/flutter_tilt.dart';
 
-class DashboardView extends ConsumerWidget {
+class DashboardView extends ConsumerStatefulWidget {
   const DashboardView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardView> createState() => _DashboardViewState();
+}
+
+class _DashboardViewState extends ConsumerState<DashboardView> {
+
+  @override
+  Widget build(BuildContext context) {
     final savingsAsync = ref.watch(savingsGoalsProvider);
 
     return Scaffold(
@@ -110,22 +114,30 @@ class DashboardView extends ConsumerWidget {
                                 ],
                               ),
                               const SizedBox(height: 24),
+                              // Counting-up balance animation
                               FittedBox(
                                 fit: BoxFit.scaleDown,
                                 alignment: Alignment.centerLeft,
-                                child: Text(
-                                  NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(totalSavings),
-                                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.w800,
-                                        shadows: [
-                                          Shadow(
-                                            color: AppColors.primary.withValues(alpha: 0.4),
-                                            blurRadius: 12,
-                                            offset: const Offset(0, 4),
+                                child: TweenAnimationBuilder<double>(
+                                  tween: Tween(begin: 0, end: totalSavings),
+                                  duration: const Duration(milliseconds: 800),
+                                  curve: Curves.easeOutCubic,
+                                  builder: (context, value, _) {
+                                    return Text(
+                                      NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(value),
+                                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.w800,
+                                            shadows: [
+                                              Shadow(
+                                                color: AppColors.primary.withValues(alpha: 0.4),
+                                                blurRadius: 12,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             ],
@@ -152,7 +164,11 @@ class DashboardView extends ConsumerWidget {
                             separatorBuilder: (context, index) => const SizedBox(height: 16),
                             itemBuilder: (context, index) {
                               final goal = goals[index];
-                              return _buildTiltCard(context, goal);
+                              // Staggered entrance: each card delayed by 100ms * index
+                              return _StaggeredEntrance(
+                                index: index,
+                                child: _buildTiltCard(context, goal),
+                              );
                             },
                           ),
                   ),
@@ -290,15 +306,23 @@ class DashboardView extends ConsumerWidget {
                     ),
                   ],
                   const SizedBox(height: 24),
+                  // Animated progress bar
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: LinearProgressIndicator(
-                      value: goal.progress,
-                      backgroundColor: Colors.black26,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        goal.progress >= 1.0 ? AppColors.success : AppColors.primary,
-                      ),
-                      minHeight: 10,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: goal.progress),
+                      duration: const Duration(milliseconds: 800),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, _) {
+                        return LinearProgressIndicator(
+                          value: value,
+                          backgroundColor: Colors.black26,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            goal.progress >= 1.0 ? AppColors.success : AppColors.primary,
+                          ),
+                          minHeight: 10,
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -310,3 +334,39 @@ class DashboardView extends ConsumerWidget {
   }
 }
 
+/// Staggered entrance animation — fades in + slides up from 30px below.
+/// Each card is delayed by 100ms × its index for a cascade effect.
+class _StaggeredEntrance extends StatelessWidget {
+  const _StaggeredEntrance({required this.index, required this.child});
+  final int index;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    // Cap delay so deep lists don't wait forever
+    final delayMs = (index * 100).clamp(0, 600);
+    final totalMs = 500 + delayMs; // animation duration + delay
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: totalMs),
+      curve: Curves.linear, // we handle curve internally via Interval
+      builder: (context, raw, _) {
+        // Interval: delay portion is idle, then ease out for the animation
+        final delayed = Interval(
+          delayMs / totalMs,
+          1.0,
+          curve: Curves.easeOutCubic,
+        ).transform(raw);
+
+        return Opacity(
+          opacity: delayed,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1.0 - delayed)),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
